@@ -630,23 +630,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 | Page Size | < 2MB | 1.7MB | ✅ |
 | Lighthouse Score | > 90 | 92 | ✅ |
 
-## 🔄 Changelog
-
-### v1.0.0 (Current)
-- Initial release with DeepSeek AI integration
-- Multi-source academic search (Zenodo, OpenAlex, arXiv)
-- Interactive analytics dashboard
-- PDF report generation
-- Deployment on Render
-
-### Upcoming Features
-- [ ] User authentication and profiles
-- [ ] Advanced AI-powered recommendations
-- [ ] Citation network visualization
-- [ ] Collaborative research boards
-- [ ] Mobile application
-
----
 
 <div align="center">
 
