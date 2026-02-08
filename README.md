@@ -543,50 +543,6 @@ const validateSearch = (req, res, next) => {
 };
 ```
 
-## 📈 Performance Optimization
-
-### Frontend Optimizations
-- **Code Splitting**: React.lazy() for component splitting
-- **Image Optimization**: Lazy loading images
-- **Bundle Analysis**: Analyze bundle size with webpack-bundle-analyzer
-- **Caching**: Service workers for offline support
-
-### Backend Optimizations
-- **Response Caching**: Cache API responses
-- **Connection Pooling**: Database connection management
-- **Compression**: Enable gzip compression
-- **Load Balancing**: For high-traffic deployments
-
-### AI Optimization
-- **Batch Processing**: Process multiple papers simultaneously
-- **Response Caching**: Cache AI responses
-- **Model Optimization**: Use appropriate model size
-- **Fallback Mechanisms**: Graceful degradation
-
-## 🧪 Testing
-
-### Run Tests
-```bash
-# Backend tests
-cd backend
-npm test
-
-# Frontend tests
-cd frontend
-npm test
-
-# E2E tests
-npm run test:e2e
-```
-
-### Test Coverage
-```bash
-# Generate coverage report
-cd frontend
-npm run test:coverage
-
-# Coverage report will be in coverage/lcov-report/
-```
 
 ### API Testing with curl
 ```bash
