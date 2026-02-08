@@ -1,117 +1,157 @@
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+
 const apiRoutes = require('./routes/api');
 
 const app = express();
 
-// Middleware
+/* ================================
+   BASIC CONFIG
+================================ */
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+/* ================================
+   MIDDLEWARE
+================================ */
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware
+/* ================================
+   REQUEST LOGGER
+================================ */
 app.use((req, res, next) => {
   const start = Date.now();
+
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`${new Date().toISOString()} ${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+    console.log(
+      `${new Date().toISOString()} | ${req.method} ${req.originalUrl} | ${res.statusCode} | ${duration}ms`
+    );
   });
+
   next();
 });
 
-// Routes
+/* ================================
+   API ROUTES
+================================ */
 app.use('/api', apiRoutes);
 
-// Health check
+/* ================================
+   HEALTH CHECK
+================================ */
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy', 
+  res.status(200).json({
+    status: 'healthy',
     service: 'Book Research Assistant API',
     version: '1.0.0',
+    environment: NODE_ENV,
     timestamp: new Date().toISOString(),
-    deepseekConfigured: !!(process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY !== 'your_deepseek_api_key_here'),
-    environment: process.env.NODE_ENV || 'development'
+    deepseekConfigured: !!(
+      process.env.DEEPSEEK_API_KEY &&
+      process.env.DEEPSEEK_API_KEY !== 'your_deepseek_api_key_here'
+    )
   });
 });
 
-// Root route
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Welcome to Book Research Assistant API',
-    version: '1.0.0',
-    endpoints: {
-      health: 'GET /health',
-      search: 'POST /api/search',
-      test: 'GET /api/test'
-    },
-    documentation: 'Send POST request to /api/search with book parameters in JSON format'
-  });
-});
+/* ================================
+   SERVE REACT FRONTEND (PRODUCTION)
+================================ */
+if (NODE_ENV === 'production') {
+  const buildPath = path.join(__dirname, '../../frontend/build');
 
-// 404 handler
+  // Serve static files
+  app.use(express.static(buildPath));
+
+  // React Router fallback
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
+}
+
+/* ================================
+   ROOT ROUTE (DEV ONLY)
+================================ */
+if (NODE_ENV !== 'production') {
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'Welcome to Book Research Assistant API',
+      version: '1.0.0',
+      endpoints: {
+        health: 'GET /health',
+        test: 'GET /api/test',
+        search: 'POST /api/search'
+      }
+    });
+  });
+}
+
+/* ================================
+   404 HANDLER
+================================ */
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    error: 'Not found',
-    message: `Route ${req.method} ${req.url} not found`,
-    availableRoutes: ['GET /', 'GET /health', 'GET /api/test', 'POST /api/search']
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.originalUrl} not found`
   });
 });
 
-// Global error handler
+/* ================================
+   GLOBAL ERROR HANDLER
+================================ */
 app.use((err, req, res, next) => {
   console.error('🚨 Server Error:', err);
-  
-  const statusCode = err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production' 
-    ? 'Internal server error' 
-    : err.message;
-  
-  res.status(statusCode).json({
+
+  res.status(err.statusCode || 500).json({
     success: false,
-    error: 'Internal server error',
-    message: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    error: 'Internal Server Error',
+    message:
+      NODE_ENV === 'production'
+        ? 'Something went wrong'
+        : err.message,
+    ...(NODE_ENV !== 'production' && { stack: err.stack })
   });
 });
 
-// Graceful shutdown handling
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  console.log('SIGINT received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-// Start server
-const PORT = process.env.PORT || 5000;
+/* ================================
+   START SERVER
+================================ */
 const server = app.listen(PORT, () => {
   console.log(`
-  🚀 Server running on port ${PORT}
-  📚 Book Research Assistant API ready
-  🔗 Health check: http://localhost:${PORT}/health
-  🔗 API Base URL: http://localhost:${PORT}/api
-  
-  📋 Configuration:
-  - Environment: ${process.env.NODE_ENV || 'development'}
-  - CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}
-  - DeepSeek API: ${process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY !== 'your_deepseek_api_key_here' ? '✅ Configured' : '⚠️ Not configured (using mock data)'}
-  `);
+🚀 Server started successfully
+📚 Book Research Assistant
+
+🌐 Environment: ${NODE_ENV}
+🔗 App URL: http://localhost:${PORT}
+🔗 API Base: http://localhost:${PORT}/api
+🔗 Health: http://localhost:${PORT}/health
+
+🧠 DeepSeek API:
+${process.env.DEEPSEEK_API_KEY &&
+process.env.DEEPSEEK_API_KEY !== 'your_deepseek_api_key_here'
+  ? '✅ Configured'
+  : '⚠️ Not configured (mock data mode)'
+}
+`);
 });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+/* ================================
+   PROCESS SAFETY
+================================ */
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
   process.exit(1);
